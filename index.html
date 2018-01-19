@@ -1,82 +1,128 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
+  <title>Mapper</title>
+</head>
+
+
 <style>
+body {
+  background: none;
+}
 
-.links line {
+svg {
+}
+
+h2 {
+    color: #ccc;
+    text-shadow: 2px 2px 4px #000000;
+}
+
+div {
+}
+
+circle {
+  stroke: black;
+
+}
+line {
   stroke: #999;
-  stroke-opacity: 0.6;
 }
-
-.nodes circle {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
 </style>
 
-<svg width="1500" height="800"></svg>
+<body>
+
+  <div id = "main_window">
+    
+    <svg width = "1200" height = "800" id = "mapperViz">
+    <g class = "links"></g>
+    <g class = "nodes"></g>
+    </svg>
+    </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 
 
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script>
-
-var svg = d3.select("svg"),
+  <script>
+    
+    svg = d3.select("#mapperViz"),
     width = +svg.attr("width"),
     height = +svg.attr("height");
 
-var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
+  .force('charge', d3.forceManyBody().strength(-10))
+  .force('center', d3.forceCenter(width / 2, height / 2))
+  .force("link", d3.forceLink().id(function(d) { return d.id; }))
+  
 
-d3.json("mapperViz.json", function(error, graph) {
+
+d3.json("mapperViz.json", function(error,  network){
   if (error) throw error;
+   
+       
 
-  var link = svg.append("g")
-      .attr("class", "links")
-    .selectAll("line")
-    .data(graph.links)
-    .enter().append("line")
-      .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+//Force Link Network//
 
-  var node = svg.append("g")
-      .attr("class", "nodes")
-    .selectAll("circle")
-    .data(graph.nodes)
-    .enter().append("circle")
-      .attr("r", 5)
-      .attr("fill", function(d) { return color(d.group); })
+  scaleRadius = d3.scaleLinear()  
+      .domain([0, network.max_weight])
+      .range([10,100]);
+
+  scaleColor = d3.scaleLinear()
+      .domain([0, network.rcover])
+      .range([1,0.2]);
+
+  simulation
+      .nodes(network.nodes)
+      .on("tick", ticked);
+
+  simulation.force("link")
+      .links(network.links);
+
+
+  function updateLinks() {
+    var u = d3.select('.links')
+      .selectAll('line')
+      .data(network.links)
+
+    u.enter()
+      .append('line')
+      .merge(u)
+      .attr('x1', function(d) {return d.source.x;})
+      .attr('y1', function(d) {return d.source.y;})
+      .attr('x2', function(d) {return d.target.x;})
+      .attr('y2', function(d) {return d.target.y;})
+
+    u.exit().remove()
+  }
+
+  function updateNodes() {
+    u = d3.select('.nodes')
+      .selectAll('circle')
+      .data(network.nodes)
+
+    u.enter()
+      .append('circle')
+      .merge(u)
+      .attr('cx', function(d) {return d.x;})
+      .attr('cy', function(d) {return d.y;})
+      .attr('r',  function (d) {return Math.sqrt(scaleRadius(d.weight));})
+      .attr('fill', function(d){ return d3.interpolateBlues(scaleColor(d.group))})
       .call(d3.drag()
           .on("start", dragstarted)
           .on("drag", dragged)
           .on("end", dragended));
 
-  node.append("title")
-      .text(function(d) { return d.id; });
-
-  simulation
-      .nodes(graph.nodes)
-      .on("tick", ticked);
-
-  simulation.force("link")
-      .links(graph.links);
+    u.exit().remove()
+  }
 
   function ticked() {
-    link
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
-
-    node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
+    updateLinks()
+    updateNodes()
   }
-});
 
-function dragstarted(d) {
+  function dragstarted(d) {
   if (!d3.event.active) simulation.alphaTarget(0.3).restart();
   d.fx = d.x;
   d.fy = d.y;
@@ -91,6 +137,10 @@ function dragended(d) {
   if (!d3.event.active) simulation.alphaTarget(0);
   d.fx = null;
   d.fy = null;
-}
+ }
+ 
+})
 
-</script>
+  </script>
+</body>
+</html>
