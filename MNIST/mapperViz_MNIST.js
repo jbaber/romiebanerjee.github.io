@@ -10,7 +10,7 @@ var simulation = d3.forceSimulation()
   
 
 
-d3.json("mapperViz.json", function(error,  network){
+d3.json("mapperViz_MNIST.json", function(error,  network){
   if (error) throw error;
    
        
