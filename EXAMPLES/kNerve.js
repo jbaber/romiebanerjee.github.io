@@ -4,7 +4,7 @@ svg = d3.select("#k-Nerve"),
 
 
 var simulation = d3.forceSimulation()
-  .force('charge', d3.forceManyBody().strength(-10))
+  .force('charge', d3.forceManyBody().strength(-20))
   .force('center', d3.forceCenter(width / 2, height / 2))
   .force("link", d3.forceLink())
 
